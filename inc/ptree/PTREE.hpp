@@ -40,7 +40,9 @@ namespace ptree
 	typedef struct PTREE_Flags
 	{
 		bool directOutput = true;
+		bool colorOutput = true;
 		bool showHidden = false;
+		bool showFileType = false;
 
 		PTREE_Style style;
 	} PTREE_Flags;
@@ -62,6 +64,9 @@ namespace ptree
 
 		PTREE_Flags flags;
 		PTREE_Info info;
+
+	protected:
+		std::string __parseColor(const std::string &_tree);
 
 	public:
 		PTREE(const std::string &_id, const PTREE_Flags &_flags);

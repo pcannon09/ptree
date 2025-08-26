@@ -2,15 +2,80 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <sstream>
 
 #include <iostream>
 
 #include "../inc/ptree/PTREE.hpp"
+#include "../inc/ptree/PTREEColor.hpp"
 
 namespace fs = std::filesystem;
 
 namespace ptree
 {
+	// PROTECTED //
+	std::string PTREE::__parseColor(const std::string &_tree)
+	{
+		std::string str;
+		std::stringstream ss{_tree};
+
+		std::string dirIndicator = "[DIR]";
+		std::string fileIndicator = "[FILE]";
+
+		while (std::getline(ss, str))
+		{
+			size_t dirIndicatorPos = str.find(dirIndicator);
+			size_t fileIndicatorPos = str.find(fileIndicator);
+
+			bool dirOK = false;
+			bool fileOK = false;
+
+			// Find for `[DIR]` (directory) indicator
+			if (dirIndicatorPos != std::string::npos)
+				dirOK = true;
+
+			else if (fileIndicatorPos != std::string::npos)
+				fileOK = true;
+
+			if (this->flags.directOutput)
+			{
+				if (dirOK)
+				{
+					if (!this->flags.showFileType)
+				 	{
+				 		// rgb(50, 100, 180)
+				 		std::string before = str.substr(0, dirIndicatorPos);
+        				std::string after = str.substr(dirIndicatorPos + dirIndicator.size());
+
+						std::cout << before << ptree::color::rgbGet(50, 100, 180) << after << "\n";
+					}
+
+					else std::cout << str << "\n";
+				}
+
+				else if (fileOK)
+				{
+					if (!this->flags.showFileType)
+					{
+ 						// rgb(70, 185, 0)
+				 		std::string before = str.substr(0, fileIndicatorPos);
+        				std::string after = str.substr(fileIndicatorPos + fileIndicator.size());
+
+						ptree::color::bold();
+						std::cout << before << ptree::color::rgbGet(70, 185, 0) << after << "\n";
+					}
+
+					else std::cout << str << "\n";
+				}
+			}
+
+			ptree::color::reset();
+		}
+
+		return str;
+	}
+
+	// PUBLIC //
 	PTREE::PTREE(const std::string &_id, const PTREE_Flags &_flags)
 		: id(_id), flags(_flags)
 	{ }
@@ -30,10 +95,18 @@ namespace ptree
     	std::vector<std::pair<std::string, unsigned int>> result;
     	std::vector<fs::directory_entry> entries;
 
-    	for (const auto &entry : fs::directory_iterator(_path))
-        	entries.push_back(entry);
+		try
+		{
+    		for (const auto &entry : fs::directory_iterator(_path))
+        		entries.push_back(entry);
+        }
 
-    	for (size_t i = 0; i < entries.size(); i++)
+        catch (fs::filesystem_error &e)
+        {
+			std::cout << e.what() << "\n";
+        }
+
+    	for (size_t i = 0 ; i < entries.size() ; i++)
     	{
         	const fs::directory_entry &entry = entries[i];
 
@@ -57,10 +130,14 @@ namespace ptree
 				if (entry.path().filename().string().front() == '.' && !this->flags.showHidden)
 					continue;
 
-            	result.push_back({ entry.path().string(), depth });
+				std::string resultInput = (entry.is_directory() ? "[DIR]" : "[FILE]") + entry.path().string();
 
+            	result.push_back({ resultInput, depth });
+
+				// If directOutput is set
+				// Output the result from `i` index
             	if (this->flags.directOutput)
-                	std::cout << this->directTree(entry.path().filename().string(), depth);
+                	std::cout << this->__parseColor(this->directTree(resultInput, depth));
 
             	if (fs::is_directory(entry.path()))
             	{
@@ -85,7 +162,7 @@ namespace ptree
 
     	std::string prefix;
 
-    	for (unsigned int i = 0; i < _depth; i++)
+    	for (unsigned int i = 0 ; i < _depth ; i++)
     	{
         	if (i == _depth - 1)
         	{
