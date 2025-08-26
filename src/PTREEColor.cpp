@@ -1,7 +1,6 @@
 #include <iostream>
 #include <string>
 
-#include "../inc/ptree/PTREEpredefines.hpp"
 #include "../inc/ptree/PTREEColor.hpp"
 
 namespace ptree
@@ -11,6 +10,13 @@ namespace ptree
 		void rgbSet(unsigned int r, unsigned int g, unsigned int b)
 		{
 			std::cout << "\033[38;2;" + std::to_string(r) + ";"
+				+ std::to_string(g) + ";"
+				+ std::to_string(b) + "m";
+		}
+
+		std::string rgbGet(unsigned int r, unsigned int g, unsigned int b)
+		{
+			return "\033[38;2;" + std::to_string(r) + ";"
 				+ std::to_string(g) + ";"
 				+ std::to_string(b) + "m";
 		}
@@ -27,5 +33,8 @@ namespace ptree
 
 		void reset()
 		{ std::cout << "\033[0m"; }
+
+		void bold()
+		{ std::cout << "\033[1m"; }
 	}
 }

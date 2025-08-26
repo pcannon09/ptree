@@ -4,6 +4,8 @@
 
 #if __cplusplus >= PTREE_DEFAULT_CPP_STD
 
+#include <string>
+
 namespace ptree
 {
 	namespace color
@@ -13,6 +15,10 @@ namespace ptree
 		void rgbBgSet(unsigned int r, unsigned int g, unsigned int b);
 		void set(int _color);
 		void reset();
+		void bold();
+
+		std::string rgbGet(unsigned int r, unsigned int g, unsigned int b);
+
 #else
 # 		define __PTREE_WINDOWS
 # 		warning "Windows OS is not supported"
