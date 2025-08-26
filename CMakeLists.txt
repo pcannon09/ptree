@@ -105,6 +105,11 @@ set(SOURCES
 
     ${SRC_DIR}/PTREEColor.cpp
     ${SRC_DIR}/PTREE.cpp
+)
+
+set(MAKE_TESTS_SOURCES
+    ${SRC_DIR}/PTREEColor.cpp
+    ${SRC_DIR}/PTREE.cpp
 
     ${TESTS_DIR}/tests.cpp
 )
@@ -112,6 +117,7 @@ set(SOURCES
 # Build Target
 
 add_executable(${projectName} ${SOURCES})
+add_library(${projectName}_tests ${MAKE_TESTS_SOURCES})
 
 # Apply compile and link options
 target_compile_options(${projectName} PRIVATE ${PROGRAM_COMPILE_FLAGS})
@@ -122,6 +128,7 @@ add_subdirectory(${VENDOR_DIR}/argx argx)
 # Link libraries
 target_link_libraries(${projectName} PRIVATE 
 	argx_static
+	${projectName}_tests
 )
 
 # Additional sources
