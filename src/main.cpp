@@ -27,7 +27,7 @@ int main()
 
 	ptree::PTREE tree("main", treeFlags);
 
-	tree.setDir(".");
+	tree.setDir("./");
 
 	std::cout << tree.tree() << "\n";
 
