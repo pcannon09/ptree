@@ -6,11 +6,11 @@
 
 #include "../inc/ptree/PTREEColor.hpp"
 
-#ifdef __DEBUG
-# 	undef __DEBUG
+#ifdef __PTREE_DEBUG
+# 	undef __PTREE_DEBUG
 #endif
 
-#define __DEBUG(_x) 	std::cout << "[ TESTS-DEBUG ] " << (_x) << "\n";
+#define __PTREE_DEBUG(_x) 	std::cout << "[ TESTS-DEBUG ] " << (_x) << "\n";
 
 // Error codes:
 // Success: 					0
@@ -24,8 +24,8 @@ namespace ptree::tests
 	{
 		if (!isatty(STDOUT_FILENO)) return false;
 		if (!std::getenv("TERM")) return false;
-		
-		__DEBUG("colorTestsSupportsColor() succeeded in isatty and TERM test, making the last test");
+
+		__PTREE_DEBUG("colorTestsSupportsColor() succeeded in isatty and TERM test, making the last test");
 
 		// Check if ANSI color support
 		return std::string(std::getenv("TERM")) != "dumb";
@@ -36,15 +36,14 @@ namespace ptree::tests
 	int colorTests()
 	{
 #if defined(__PTREE_WINDOWS)
-		__DEBUG("Windows OS is not supported")
-		return 2;
+		__PTREE_DEBUG("Windows OS is not supported")
+			return 2;
 #endif
 
 		if (!ptree::tests::colorTestsSupportsColor())
-		{ __DEBUG("No color support for the current terminal"); return 3; }
+		{  __PTREE_DEBUG("No color support for the current terminal"); return 3; }
 
-
-		__DEBUG("Succeeded in tests");
+		__PTREE_DEBUG("Succeeded in tests");
 
 		ptree::color::rgbSet(210, 90, 30); std::cout << "This is an orange-like text\n";
 		ptree::color::reset(); std::cout << "This is some normal text\n";
@@ -57,5 +56,5 @@ namespace ptree::tests
 	}
 }
 
-#undef __DEBUG
+#undef  __PTREE_DEBUG
 
