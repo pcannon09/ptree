@@ -36,5 +36,11 @@ namespace ptree
 
 		void bold()
 		{ std::cout << "\033[1m"; }
+
+		std::string getBold()
+		{ return "\033[1m"; }
+
+		std::string getReset()
+		{ return "\033[0m"; }
 	}
 }
