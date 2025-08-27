@@ -18,6 +18,8 @@ namespace ptree
 		void bold();
 
 		std::string rgbGet(unsigned int r, unsigned int g, unsigned int b);
+		std::string getReset();
+		std::string getBold();
 
 #else
 # 		define __PTREE_WINDOWS
