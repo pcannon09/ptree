@@ -43,6 +43,7 @@ namespace ptree
 		bool colorOutput = true;
 		bool showHidden = false;
 		bool showFileType = false;
+		bool showFullPath = false;
 
 		PTREE_Style style;
 	} PTREE_Flags;

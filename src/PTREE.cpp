@@ -48,7 +48,7 @@ namespace ptree
 				if (!this->flags.showFileType)
 					total += before + rgbColor + after + ptree::color::getReset() + "\n";
 
-				else total += before + rgbColor + "[DIR]" + after + ptree::color::getReset() + "\n";
+				else total += before + rgbColor + "[DIR] " + after + ptree::color::getReset() + "\n";
 			}
 
 			else if (fileOK)
@@ -89,6 +89,8 @@ namespace ptree
 
 		static std::string totalFiles;
 
+		std::string finalEntry;
+
     	std::vector<std::pair<std::string, unsigned int>> result;
     	std::vector<fs::directory_entry> entries;
 
@@ -127,7 +129,9 @@ namespace ptree
 				if (entry.path().filename().string().front() == '.' && !this->flags.showHidden)
 					continue;
 
-				std::string resultInput = (entry.is_directory() ? "[DIR]" : "[FILE]") + entry.path().string();
+				finalEntry = (this->flags.showFullPath ? entry.path().string() : entry.path().filename().string());
+
+				std::string resultInput = (entry.is_directory() ? "[DIR]" : "[FILE]") + finalEntry;
 
             	result.push_back({ resultInput, depth });
 
@@ -164,6 +168,7 @@ namespace ptree
     	{
         	if (i == _depth - 1)
         	{
+        		// Show path separators
             	// EXAMPLE: └── OR ├──
             	if (lastFlags.size() > i && lastFlags[i])
                 	prefix += this->flags.style.bottomRight + this->flags.style.line + this->flags.style.line + " ";
