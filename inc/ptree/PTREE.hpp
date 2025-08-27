@@ -74,10 +74,12 @@ namespace ptree
 
 		void setDir(const std::string &_dir);
 
-		std::vector<std::pair<std::string, unsigned int>> scan(const std::string &_path);
+		std::pair<std::vector<std::pair<std::string, unsigned int>>, std::string> scan(const std::string &_path);
 
 		std::string tree();
 		std::string directTree(std::string _path, unsigned int _depth);
+
+		std::string parseColor(const std::string &_tree);
 
 		std::string getDefaultDir() const;
 		std::string getID() const;

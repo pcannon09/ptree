@@ -16,6 +16,7 @@ namespace ptree
 	// PROTECTED //
 	std::string PTREE::__parseColor(const std::string &_tree)
 	{
+		std::string total;
 		std::string str;
 		std::stringstream ss{_tree};
 
@@ -37,42 +38,36 @@ namespace ptree
 			else if (fileIndicatorPos != std::string::npos)
 				fileOK = true;
 
-			if (this->flags.directOutput)
+			if (dirOK)
 			{
-				if (dirOK)
-				{
-					if (!this->flags.showFileType)
-				 	{
-				 		// rgb(50, 100, 180)
-				 		std::string before = str.substr(0, dirIndicatorPos);
-        				std::string after = str.substr(dirIndicatorPos + dirIndicator.size());
+				// rgb(50, 100, 180)
+				std::string rgbColor = ptree::color::rgbGet(50, 100, 180);
+				std::string before = str.substr(0, dirIndicatorPos);
+        		std::string after = str.substr(dirIndicatorPos + dirIndicator.size());
 
-						std::cout << before << ptree::color::rgbGet(50, 100, 180) << after << "\n";
-					}
+				if (!this->flags.showFileType)
+					total += before + rgbColor + after + ptree::color::getReset() + "\n";
 
-					else std::cout << str << "\n";
-				}
+				else total += before + rgbColor + "[DIR]" + after + ptree::color::getReset() + "\n";
+			}
 
-				else if (fileOK)
-				{
-					if (!this->flags.showFileType)
-					{
- 						// rgb(70, 185, 0)
-				 		std::string before = str.substr(0, fileIndicatorPos);
-        				std::string after = str.substr(fileIndicatorPos + fileIndicator.size());
+			else if (fileOK)
+			{
+ 				// rgb(70, 185, 0)
+				std::string rgbColor = ptree::color::rgbGet(70, 185, 0);
+				std::string before = str.substr(0, fileIndicatorPos);
+        		std::string after = str.substr(fileIndicatorPos + fileIndicator.size());
 
-						ptree::color::bold();
-						std::cout << before << ptree::color::rgbGet(70, 185, 0) << after << "\n";
-					}
+				if (!this->flags.showFileType)
+					total += ptree::color::getBold() + before + rgbColor + after + ptree::color::getReset() + "\n";
 
-					else std::cout << str << "\n";
-				}
+				else total += ptree::color::getBold() + before + rgbColor + "[FILE] " + after + ptree::color::getReset() + "\n";
 			}
 
 			ptree::color::reset();
 		}
 
-		return str;
+		return total;
 	}
 
 	// PUBLIC //
@@ -86,11 +81,13 @@ namespace ptree
 	void PTREE::setDir(const std::string &_dir)
 	{ this->defaultDir = _dir; }
 
-	// 						name 		   deepness
-	std::vector<std::pair<std::string, unsigned int>> PTREE::scan(const std::string &_path)
+	// 								name 		   deepness  	  total-str
+	std::pair<std::vector<std::pair<std::string, unsigned int>>, std::string> PTREE::scan(const std::string &_path)
 	{
     	static fs::path root = fs::canonical(_path);
     	static std::vector<bool> lastFlags; // shared with directTree
+
+		static std::string totalFiles;
 
     	std::vector<std::pair<std::string, unsigned int>> result;
     	std::vector<fs::directory_entry> entries;
@@ -134,14 +131,15 @@ namespace ptree
 
             	result.push_back({ resultInput, depth });
 
+				totalFiles += this->__parseColor(this->directTree(resultInput, depth));
+
 				// If directOutput is set
 				// Output the result from `i` index
-            	if (this->flags.directOutput)
-                	std::cout << this->__parseColor(this->directTree(resultInput, depth));
+            	if (this->flags.directOutput) std::cout << this->__parseColor(this->directTree(resultInput, depth));;
 
             	if (fs::is_directory(entry.path()))
             	{
-                	std::vector<std::pair<std::string, unsigned int>> subResult = scan(entry.path().string());
+                	std::vector<std::pair<std::string, unsigned int>> subResult = scan(entry.path().string()).first;
 
                 	result.insert(result.end(), subResult.begin(), subResult.end());
             	}
@@ -151,9 +149,9 @@ namespace ptree
         	{
             	result.push_back({ e.what(), depth });
         	}
-    	}
+        }
 
-    	return result;
+    	return { result, totalFiles };
 	}
 
 	std::string PTREE::directTree(std::string _path, unsigned int _depth)
@@ -170,17 +168,13 @@ namespace ptree
             	if (lastFlags.size() > i && lastFlags[i])
                 	prefix += this->flags.style.bottomRight + this->flags.style.line + this->flags.style.line + " ";
 
-            	else
-                	prefix += this->flags.style.center + this->flags.style.line + this->flags.style.line + " ";
+            	else prefix += this->flags.style.center + this->flags.style.line + this->flags.style.line + " ";
         	}
         	
         	else
         	{
-            	if (lastFlags.size() > i && lastFlags[i])
-                	prefix += "    ";
-
-            	else
-                	prefix += this->flags.style.center + "   ";
+            	if (lastFlags.size() > i && lastFlags[i]) prefix += "    ";
+            	else prefix += this->flags.style.center + "   ";
         	}
     	}
 
@@ -193,9 +187,20 @@ namespace ptree
 		if (this->flags.directOutput)
 			std::cout << this->defaultDir << "\n";
 
-		this->scan(this->defaultDir);
+		std::string scanned = this->scan(this->defaultDir).second;
+
+		// If NOT directOutput (`false`), output everything at the end of the scan
+		if (!this->flags.directOutput)
+			std::cout << this->defaultDir << "\n" << scanned << "\n";
 
 		return "";
+	}
+
+	std::string PTREE::parseColor(const std::string &_tree)
+	{
+		if (_tree.empty()) return "";
+
+		return this->__parseColor(_tree);
 	}
 
 	std::string PTREE::getDefaultDir() const
