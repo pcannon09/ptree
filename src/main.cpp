@@ -24,6 +24,8 @@ int main()
 
 	ptree::PTREE_Flags treeFlags;
 	treeFlags.directOutput = true;
+	treeFlags.showFileType = true;
+	treeFlags.directOutput = true;
 
 	ptree::PTREE tree("main", treeFlags);
 
