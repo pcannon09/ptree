@@ -27,13 +27,12 @@ int main()
 	treeFlags.showFileType = false;
 	treeFlags.directOutput = true;
 	treeFlags.showFullPath = false;
+	treeFlags.showFileInfo = true;
 
 	ptree::PTREE tree("main", treeFlags);
 
 	tree.setDir("./");
-
-	std::cout << tree.tree() << "\n";
-
-	return 0;
+	
+	return tree.tree();
 }
 
