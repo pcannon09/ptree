@@ -32,9 +32,9 @@ namespace ptree
 
 		this->info.totalAll = this->info.totalDirs + this->info.totalFiles;
 
-		strs.push_back("Dirs : " + std::to_string(this->info.totalDirs));
-		strs.push_back("Files: " + std::to_string(this->info.totalFiles));
-		strs.push_back("Total: " + std::to_string(this->info.totalAll));
+		strs.emplace_back("Dirs : " + std::to_string(this->info.totalDirs));
+		strs.emplace_back("Files: " + std::to_string(this->info.totalFiles));
+		strs.emplace_back("Total: " + std::to_string(this->info.totalAll));
 
 		return strs;
 	}
@@ -95,6 +95,35 @@ namespace ptree
 		return total;
 	}
 
+	uintmax_t PTREE::__getFileSize(const std::string &_file)
+	{ return fs::file_size(_file); }
+
+	uintmax_t PTREE::__getDirSize(const std::string &_dir)
+	{
+    	uintmax_t dirSizes = 0;
+
+    	try
+    	{
+        	for (const auto &entry : fs::directory_iterator(_dir))
+        	{
+            	const auto &path = entry.path();
+
+            	if (path.filename().string().front() == '.' && !this->flags.showHidden)
+                	continue;
+
+            	if (fs::is_directory(path)) dirSizes += this->__getDirSize(path);
+            	else dirSizes += this->__getFileSize(path);
+        	}
+    	}
+
+    	catch (fs::filesystem_error &e)
+    	{
+        	std::cout << e.what() << "\n";
+    	}
+
+    	return dirSizes;
+	}
+	
 	// PUBLIC //
 	PTREE::PTREE(const std::string &_id, const PTREE_Flags &_flags)
 		: id(_id), flags(_flags)
@@ -132,7 +161,7 @@ namespace ptree
 		try
 		{
     		for (const auto &entry : fs::directory_iterator(_path))
-        		entries.push_back(entry);
+        		entries.emplace_back(entry);
         }
 
         catch (fs::filesystem_error &e)
@@ -140,6 +169,7 @@ namespace ptree
 			std::cout << e.what() << "\n";
         }
 
+		// List entries
     	for (size_t i = 0 ; i < entries.size() ; i++)
     	{
         	const fs::directory_entry &entry = entries[i];
@@ -168,7 +198,7 @@ namespace ptree
 
 				std::string resultInput = (entry.is_directory() ? "[DIR]" : "[FILE]") + finalEntry;
 
-            	result.push_back({ resultInput, depth });
+            	result.emplace_back( resultInput, depth );
 
 				if (this->flags.colorOutput) totalFiles += this->__parseColor(this->directTree(resultInput, depth));
 				else totalFiles += this->directTree(resultInput, depth);
@@ -181,8 +211,12 @@ namespace ptree
 					else std::cout << this->directTree(resultInput, depth);
             	}
 
+				this->processedFilesDirs.first.emplace_back(entry.path()); // file
+            	
+            	// Parse entire dir
             	if (fs::is_directory(entry.path()))
             	{
+					this->processedFilesDirs.second.emplace_back(entry.path()); // dir
             		this->info.totalDirs++;
 
                 	std::vector<std::pair<std::string, unsigned int>> subResult = scan(entry.path().string()).first;
@@ -190,12 +224,15 @@ namespace ptree
                 	result.insert(result.end(), subResult.begin(), subResult.end());
             	}
 
-            	else this->info.totalFiles++;
+            	else
+            	{
+            		this->info.totalFiles++;
+            	}
         	}
 
         	catch (const fs::filesystem_error &e)
         	{
-            	result.push_back({ e.what(), depth });
+            	result.emplace_back( e.what(), depth );
         	}
         }
 
@@ -354,6 +391,30 @@ namespace ptree
 		}
 
 		return 0;
+	}
+
+	uintmax_t PTREE::getFileSize(const std::string &_file)
+	{
+		if (_file.empty())
+			return 0;
+
+		if (fs::is_directory(_file))
+			return this->__getDirSize(_file);
+
+		return this->__getFileSize(_file);
+	}
+
+	uintmax_t PTREE::getDirSize(const std::string &_dir)
+	{
+		if (_dir.empty())
+			return 0;
+
+		// If `_dir` is not DIR, fallback as if it was a file
+		// * Call function: PTREE::__getFileSize();
+		if (!fs::is_directory(_dir))
+			return this->__getFileSize(_dir);
+
+		return this->__getDirSize(_dir);
 	}
 
 	std::string PTREE::parseColor(const std::string &_tree)

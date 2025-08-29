@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <utility>
+#include <cinttypes>
 
 namespace ptree
 {
@@ -75,6 +76,9 @@ namespace ptree
 		std::string __parseColor(const std::string &_tree);
 		std::vector<std::string> __outputInfo();
 
+		uintmax_t __getFileSize(const std::string &_file);
+		uintmax_t __getDirSize(const std::string &_dir);
+
 	public:
 		PTREE(const std::string &_id, const PTREE_Flags &_flags);
 		~PTREE();
@@ -84,6 +88,9 @@ namespace ptree
 		std::pair<std::vector<std::pair<std::string, unsigned int>>, std::string> scan(const std::string &_path);
 
 		int tree();
+
+		uintmax_t getFileSize(const std::string &_file);
+		uintmax_t getDirSize(const std::string &_dir);
 
 		std::vector<std::string> outputInfo();
 
