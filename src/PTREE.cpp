@@ -11,9 +11,34 @@
 
 namespace fs = std::filesystem;
 
+#ifdef __PTREE_GET_OUTPUT_INFO
+# 	undef __PTREE_GET_OUTPUT_INFO
+#endif
+
+// NOTE:
+// Remember to have a prefix (this, PTREE::, ...) with a sufix `()` or `({PARAM1}, {PARAM2}, ...)`
+#if PTREE_DEV
+# 	define __PTREE_GET_OUTPUT_INFO __outputInfo
+#else
+# 	define __PTREE_GET_OUTPUT_INFO outputInfo
+#endif
+
 namespace ptree
 {
 	// PROTECTED //
+	std::vector<std::string> PTREE::__outputInfo()
+	{
+		std::vector<std::string> strs;
+
+		this->info.totalAll = this->info.totalDirs + this->info.totalFiles;
+
+		strs.push_back("Dirs : " + std::to_string(this->info.totalDirs));
+		strs.push_back("Files: " + std::to_string(this->info.totalFiles));
+		strs.push_back("Total: " + std::to_string(this->info.totalAll));
+
+		return strs;
+	}
+
 	std::string PTREE::__parseColor(const std::string &_tree)
 	{
 		std::string total;
@@ -53,7 +78,7 @@ namespace ptree
 
 			else if (fileOK)
 			{
- 				// rgb(70, 185, 0)
+ 				// BOLD: rgb(70, 185, 0)
 				std::string rgbColor = ptree::color::rgbGet(70, 185, 0);
 				std::string before = str.substr(0, fileIndicatorPos);
         		std::string after = str.substr(fileIndicatorPos + fileIndicator.size());
@@ -80,6 +105,16 @@ namespace ptree
 
 	void PTREE::setDir(const std::string &_dir)
 	{ this->defaultDir = _dir; }
+
+	std::vector<std::string> PTREE::outputInfo()
+	{
+		std::vector<std::string> outInfo = this->__PTREE_GET_OUTPUT_INFO();
+
+		if (outInfo.empty())
+			return { "ERR: Could not get information" };
+
+		return outInfo;
+	}
 
 	// 								name 		   deepness  	  total-str
 	std::pair<std::vector<std::pair<std::string, unsigned int>>, std::string> PTREE::scan(const std::string &_path)
@@ -143,10 +178,14 @@ namespace ptree
 
             	if (fs::is_directory(entry.path()))
             	{
+            		this->info.totalDirs++;
+
                 	std::vector<std::pair<std::string, unsigned int>> subResult = scan(entry.path().string()).first;
 
                 	result.insert(result.end(), subResult.begin(), subResult.end());
             	}
+
+            	else this->info.totalFiles++;
         	}
 
         	catch (const fs::filesystem_error &e)
@@ -171,34 +210,118 @@ namespace ptree
         		// Show path separators
             	// EXAMPLE: └── OR ├──
             	if (lastFlags.size() > i && lastFlags[i])
-                	prefix += this->flags.style.bottomRight + this->flags.style.line + this->flags.style.line + " ";
+                	prefix += this->style.bottomRight + this->style.bottomRight + this->style.line + " ";
 
-            	else prefix += this->flags.style.center + this->flags.style.line + this->flags.style.line + " ";
+            	else prefix += this->style.bottomRight + this->style.line + " ";
         	}
         	
         	else
         	{
-            	if (lastFlags.size() > i && lastFlags[i]) prefix += "    ";
-            	else prefix += this->flags.style.center + "   ";
+            	if (lastFlags.size() > i && lastFlags[i]) prefix += "   ";
+            	else prefix += this->style.center + "  ";
         	}
     	}
 
     	return prefix + _path + "\n";
 	}
 
-	std::string PTREE::tree()
+	int PTREE::tree()
 	{
-		// Show which directory is being showed
+		// ONLY UST SHOW THE DIRECTORY THAT IS GOING TO BE PROCESSED
 		if (this->flags.directOutput)
+		{
 			std::cout << this->defaultDir << "\n";
+			this->info.totalDirs++; // Include the dir that is going to be processed
+		}
 
+		// Total output:
+		// * The `PTREE::scan()` function will do the output (if NOT !this->flags.directOutput)
+		// 	 of the tree, BUT NOT THE INFORMATION OUTPUT
 		std::string scanned = this->scan(this->defaultDir).second;
 
-		// If NOT directOutput (`false`), output everything at the end of the scan
+		// If NOT `this->flags.directOutput` (`false`), output everything at the end of the scan
 		if (!this->flags.directOutput)
+		{
 			std::cout << this->defaultDir << "\n" << scanned << "\n";
+		}
+        
+        // Separator with info and the tree
+		std::cout << "\n";
 
-		return "";
+        // INFO - BOX
+        {
+			std::vector<std::string> outputInfoStrs = this->outputInfo();
+
+			if (outputInfoStrs.empty())
+    			return 0;
+
+			// Longest info line length
+			size_t maxLen = 0;
+			for (auto &s : outputInfoStrs)
+    			if (s.size() > maxLen)
+        			maxLen = s.size();
+
+			// Box-drawing characters
+			const std::string h  = this->style.line;
+			const std::string v  = this->style.center;
+			const std::string tl = this->style.topRight;
+			const std::string br = this->style.bottomLeft;
+			const std::string tr = this->style.topLeft;
+			const std::string bl = this->style.bottomRight;
+
+			// `repeat()` lambda function helper
+			auto repeat = [](const std::string &_s, size_t _n)
+			{
+    			std::string out;
+
+    			out.reserve(_s.size() * _n);
+    			
+    			for (size_t i = 0; i < _n; i++) out += _s;
+
+    			return out;
+			};
+
+			// full box width = content + 2 spaces (left / right)
+			// Top border with INFO text centered
+			std::string infoTitle = " INFO ";
+			std::string topBorder;
+
+			size_t boxWidth = maxLen + 2;
+			size_t sideLen = (boxWidth > infoTitle.size())
+               	? (boxWidth - infoTitle.size()) / 2
+               	: 0;
+
+			try
+			{
+				topBorder = tl + repeat(h, sideLen) + infoTitle
+                	+ repeat(h, boxWidth - sideLen - infoTitle.size()) + tr + "\n";
+            }
+
+            catch (const std::length_error &lenErr)
+            {
+				topBorder = tl + h + h + tr + "\n";
+            }
+
+			std::cout << topBorder;
+
+			// Body
+			for (auto &x : outputInfoStrs)
+			{
+    			std::string out = v + " " + x;
+
+    			out += std::string(maxLen - x.size(), ' ');
+    			out += " " + v + "\n";
+
+    			std::cout << out;
+			}
+
+			// Bottom border
+			std::string bottomBorder = bl + repeat(h, boxWidth) + br + "\n";
+
+			std::cout << bottomBorder;
+		}
+
+		return 0;
 	}
 
 	std::string PTREE::parseColor(const std::string &_tree)

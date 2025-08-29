@@ -41,18 +41,17 @@ namespace ptree
 	{
 		bool directOutput = true;
 		bool colorOutput = true;
+		bool showFileInfo = true;
 		bool showHidden = false;
 		bool showFileType = false;
 		bool showFullPath = false;
-
-		PTREE_Style style;
 	} PTREE_Flags;
 
 	typedef struct PTREE_Info
 	{
-		int totalDirs;
-		int totalFiles;
-		int totalAll;
+		unsigned int totalDirs;
+		unsigned int totalFiles;
+		unsigned int totalAll;
 	} PTREE_Info;
 
 	class PTREE
@@ -64,10 +63,12 @@ namespace ptree
 		std::string treeOutput;
 
 		PTREE_Flags flags;
+		PTREE_Style style;
 		PTREE_Info info;
 
 	protected:
 		std::string __parseColor(const std::string &_tree);
+		std::vector<std::string> __outputInfo();
 
 	public:
 		PTREE(const std::string &_id, const PTREE_Flags &_flags);
@@ -77,7 +78,10 @@ namespace ptree
 
 		std::pair<std::vector<std::pair<std::string, unsigned int>>, std::string> scan(const std::string &_path);
 
-		std::string tree();
+		int tree();
+
+		std::vector<std::string> outputInfo();
+
 		std::string directTree(std::string _path, unsigned int _depth);
 
 		std::string parseColor(const std::string &_tree);
