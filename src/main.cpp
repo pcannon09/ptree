@@ -29,7 +29,6 @@ int main()
 	treeFlags.showFullPath = false;
 	treeFlags.showFileInfo = true;
 	treeFlags.colorOutput = false;
-		
 
 	ptree::PTREE tree("main", treeFlags);
 
