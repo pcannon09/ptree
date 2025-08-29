@@ -16,7 +16,7 @@ namespace fs = std::filesystem;
 #endif
 
 // NOTE:
-// Remember to have a prefix (this, PTREE::, ...) with a sufix `()` or `({PARAM1}, {PARAM2}, ...)`
+// Remember to have a prefix (this->, PTREE::, ...) with a sufix `()` or `({PARAM1}, {PARAM2}, ...)`
 #if PTREE_DEV
 # 	define __PTREE_GET_OUTPUT_INFO __outputInfo
 #else
