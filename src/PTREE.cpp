@@ -3,6 +3,7 @@
 #include <vector>
 #include <utility>
 #include <sstream>
+#include <algorithm>
 
 #include <iostream>
 
@@ -170,11 +171,16 @@ namespace ptree
 
             	result.push_back({ resultInput, depth });
 
-				totalFiles += this->__parseColor(this->directTree(resultInput, depth));
+				if (this->flags.colorOutput) totalFiles += this->__parseColor(this->directTree(resultInput, depth));
+				else totalFiles += this->directTree(resultInput, depth);
 
 				// If directOutput is set
 				// Output the result from `i` index
-            	if (this->flags.directOutput) std::cout << this->__parseColor(this->directTree(resultInput, depth));;
+            	if (this->flags.directOutput)
+            	{
+					if (this->flags.colorOutput) std::cout << this->__parseColor(this->directTree(resultInput, depth));
+					else std::cout << this->directTree(resultInput, depth);
+            	}
 
             	if (fs::is_directory(entry.path()))
             	{
@@ -220,6 +226,33 @@ namespace ptree
             	if (lastFlags.size() > i && lastFlags[i]) prefix += "   ";
             	else prefix += this->style.center + "  ";
         	}
+    	}
+
+    	if (!this->flags.colorOutput && !this->flags.showFileType)
+    	{
+			std::string fileIndicator = "[FILE]";
+			std::string dirIndicator = "[DIR]";
+
+    		size_t fileIndicatorPos = _path.find(fileIndicator);
+    		size_t dirIndicatorPos = _path.find(dirIndicator);
+
+			// FILE Indicator
+			if (fileIndicatorPos != std::string::npos)
+			{
+				std::string before = _path.substr(0, fileIndicatorPos);
+        		std::string after = _path.substr(fileIndicatorPos + fileIndicator.size());
+
+				_path = before + after;
+			}
+
+			// DIR Indicator
+			if (dirIndicatorPos != std::string::npos)
+			{
+				std::string before = _path.substr(0, dirIndicatorPos);
+        		std::string after = _path.substr(dirIndicatorPos + dirIndicator.size());
+
+				_path = before + after;
+			}
     	}
 
     	return prefix + _path + "\n";

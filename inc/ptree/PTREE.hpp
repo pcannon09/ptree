@@ -41,10 +41,12 @@ namespace ptree
 	{
 		bool directOutput = true;
 		bool colorOutput = true;
+
 		bool showFileInfo = true;
 		bool showHidden = false;
 		bool showFileType = false;
 		bool showFullPath = false;
+		bool showFiles = false;
 	} PTREE_Flags;
 
 	typedef struct PTREE_Info
@@ -59,6 +61,9 @@ namespace ptree
 	private:
 		std::string id;
 		std::string defaultDir;
+
+		// .first = Files, .second = Dirs
+		std::pair<std::vector<std::string>, std::vector<std::string>> processedFilesDirs;
 
 		std::string treeOutput;
 
