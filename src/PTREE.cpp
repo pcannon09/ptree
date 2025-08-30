@@ -26,15 +26,42 @@ namespace fs = std::filesystem;
 namespace ptree
 {
 	// PROTECTED //
+	std::pair<float, std::string> PTREE::__convertSize(const float _size)
+	{
+		unsigned int requiredMode = this->flags.showSizeMode;
+
+		if (!this->flags.forceSizeMode)
+		{
+			// Set required mode
+			// * Needs to be from bigger (Ex: TB) to smaller (Ex: MB)
+			if (__PTREE_BYTES_TO_TB(_size) >= 1.0) requiredMode = 3;
+			else if (__PTREE_BYTES_TO_GB(_size) >= 1.0) requiredMode = 2;
+			else if (__PTREE_BYTES_TO_MB(_size) >= 1.0) requiredMode = 1;
+			else requiredMode = 0;
+		}
+
+		// Result from `requiredMode`
+		if (requiredMode == 0) return { _size, "kib" }; // KiB
+		else if (requiredMode == 1) return { __PTREE_BYTES_TO_MB(_size), "mib"}; // MiB
+		else if (requiredMode == 2) return { __PTREE_BYTES_TO_GB(_size), "gib" }; // GiB
+		else if (requiredMode == 3) return { __PTREE_BYTES_TO_TB(_size), "tib" }; // TiB
+
+		return { 0, "" };
+	}
+
 	std::vector<std::string> PTREE::__outputInfo()
 	{
 		std::vector<std::string> strs;
 
 		this->info.totalAll = this->info.totalDirs + this->info.totalFiles;
+		this->info.totalSize = this->__getDirSize(this->defaultDir);
 
-		strs.emplace_back("Dirs : " + std::to_string(this->info.totalDirs));
+		auto totalSizeConvert = this->__convertSize(this->info.totalSize);
+
+		strs.emplace_back("Dirs: " + std::to_string(this->info.totalDirs));
 		strs.emplace_back("Files: " + std::to_string(this->info.totalFiles));
 		strs.emplace_back("Total: " + std::to_string(this->info.totalAll));
+		strs.emplace_back("Total Size: " + std::to_string(totalSizeConvert.first) + " " + totalSizeConvert.second);
 
 		return strs;
 	}
@@ -57,36 +84,43 @@ namespace ptree
 			bool fileOK = false;
 
 			// Find for `[DIR]` (directory) indicator
-			if (dirIndicatorPos != std::string::npos)
-				dirOK = true;
-
-			else if (fileIndicatorPos != std::string::npos)
-				fileOK = true;
+			if (dirIndicatorPos != std::string::npos) dirOK = true;
+			else if (fileIndicatorPos != std::string::npos) fileOK = true;
 
 			if (dirOK)
 			{
 				// rgb(50, 100, 180)
+				// rgb(0, 40, 180)
 				std::string rgbColor = ptree::color::rgbGet(50, 100, 180);
 				std::string before = str.substr(0, dirIndicatorPos);
         		std::string after = str.substr(dirIndicatorPos + dirIndicator.size());
+				std::string dirSizeInfo = after.substr(after.find("["), after.find("]"));
+
+        		after = after.substr(0, after.find("["));
 
 				if (!this->flags.showFileType)
-					total += before + rgbColor + after + ptree::color::getReset() + "\n";
+					total += before + rgbColor + after + ptree::color::rgbGet(0, 40, 180) + dirSizeInfo + ptree::color::getReset() + "\n";
 
-				else total += before + rgbColor + "[DIR] " + after + ptree::color::getReset() + "\n";
+				else
+					total += before + rgbColor + "[DIR] " + after + ptree::color::rgbGet(0, 40, 180) + dirSizeInfo + ptree::color::getReset() + "\n";
 			}
 
 			else if (fileOK)
 			{
  				// BOLD: rgb(70, 185, 0)
+ 				// BOLD: rgb(10, 125, 0)
 				std::string rgbColor = ptree::color::rgbGet(70, 185, 0);
 				std::string before = str.substr(0, fileIndicatorPos);
         		std::string after = str.substr(fileIndicatorPos + fileIndicator.size());
+				std::string fileSizeInfo = after.substr(after.find("["), after.find("]"));
+
+        		after = after.substr(0, after.find("["));
 
 				if (!this->flags.showFileType)
-					total += ptree::color::getBold() + before + rgbColor + after + ptree::color::getReset() + "\n";
+					total += ptree::color::getBold() + before + rgbColor + after + ptree::color::rgbGet(10, 125, 0) + fileSizeInfo + ptree::color::getReset() + "\n";
 
-				else total += ptree::color::getBold() + before + rgbColor + "[FILE] " + after + ptree::color::getReset() + "\n";
+				else
+					total += ptree::color::getBold() + before + rgbColor + "[FILE] " + after + ptree::color::rgbGet(10, 125, 0) + fileSizeInfo + ptree::color::getReset() + "\n";
 			}
 
 			ptree::color::reset();
@@ -95,10 +129,10 @@ namespace ptree
 		return total;
 	}
 
-	uintmax_t PTREE::__getFileSize(const std::string &_file)
+	float PTREE::__getFileSize(const std::string &_file)
 	{ return fs::file_size(_file); }
 
-	uintmax_t PTREE::__getDirSize(const std::string &_dir)
+	float PTREE::__getDirSize(const std::string &_dir)
 	{
     	uintmax_t dirSizes = 0;
 
@@ -197,6 +231,26 @@ namespace ptree
 				finalEntry = (this->flags.showFullPath ? entry.path().string() : entry.path().filename().string());
 
 				std::string resultInput = (entry.is_directory() ? "[DIR]" : "[FILE]") + finalEntry;
+				
+				// END OF `resultInput`
+				if (this->flags.showFileSize)
+				{
+					resultInput += " "; // So the previous text does not get cluttered
+
+					if (!fs::is_directory(entry.path()))
+					{
+						auto convertedSize = this->__convertSize(this->__getFileSize(entry.path()));
+
+						resultInput += "[" +  std::to_string(convertedSize.first) + " " + convertedSize.second + "]";
+					}
+
+					else
+					{
+						auto convertedSize = this->__convertSize(this->__getDirSize(entry.path()));
+
+						resultInput += "[" +  std::to_string(convertedSize.first) + " " + convertedSize.second + "]";
+					}
+				}
 
             	result.emplace_back( resultInput, depth );
 
@@ -393,7 +447,7 @@ namespace ptree
 		return 0;
 	}
 
-	uintmax_t PTREE::getFileSize(const std::string &_file)
+	float PTREE::getFileSize(const std::string &_file)
 	{
 		if (_file.empty())
 			return 0;
@@ -404,7 +458,7 @@ namespace ptree
 		return this->__getFileSize(_file);
 	}
 
-	uintmax_t PTREE::getDirSize(const std::string &_dir)
+	float PTREE::getDirSize(const std::string &_dir)
 	{
 		if (_dir.empty())
 			return 0;

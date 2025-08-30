@@ -42,6 +42,10 @@
 #	define __PTREE_MAKE_TESTS
 #endif // PTREE_DEV
 
+#define __PTREE_BYTES_TO_MB(_bytes)  		(_bytes / (1024.0 * 1024.0))
+#define __PTREE_BYTES_TO_GB(_bytes)  		(_bytes / (1024.0 * 1024.0 * 1024.0))
+#define __PTREE_BYTES_TO_TB(_bytes)  		(_bytes / (1024.0 * 1024.0 * 1024.0 * 1024.0))
+
 // OS Checks
 #ifdef WIN32
 #	define PTREE_OS_WIN32

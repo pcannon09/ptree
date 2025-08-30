@@ -48,6 +48,15 @@ namespace ptree
 		bool showFileType = false;
 		bool showFullPath = false;
 		bool showFiles = false;
+		bool showFileSize = true;
+		bool showDirSize = showFileSize;
+		bool forceSizeMode = false;
+
+		// 0 = KiB
+		// 1 = MiB
+		// 2 = GiB
+		// 3 = TiB
+		unsigned int showSizeMode = 1;
 	} PTREE_Flags;
 
 	typedef struct PTREE_Info
@@ -55,6 +64,7 @@ namespace ptree
 		unsigned int totalDirs;
 		unsigned int totalFiles;
 		unsigned int totalAll;
+		unsigned int totalSize;
 	} PTREE_Info;
 
 	class PTREE
@@ -73,11 +83,15 @@ namespace ptree
 		PTREE_Info info;
 
 	protected:
+		// Wrapper for the following functions:
 		std::string __parseColor(const std::string &_tree);
 		std::vector<std::string> __outputInfo();
 
-		uintmax_t __getFileSize(const std::string &_file);
-		uintmax_t __getDirSize(const std::string &_dir);
+		float __getFileSize(const std::string &_file);
+		float __getDirSize(const std::string &_dir);
+
+		// No Wrapper for the following functions:
+		std::pair<float, std::string> __convertSize(const float _size);
 
 	public:
 		PTREE(const std::string &_id, const PTREE_Flags &_flags);
@@ -89,8 +103,8 @@ namespace ptree
 
 		int tree();
 
-		uintmax_t getFileSize(const std::string &_file);
-		uintmax_t getDirSize(const std::string &_dir);
+		float getFileSize(const std::string &_file);
+		float getDirSize(const std::string &_dir);
 
 		std::vector<std::string> outputInfo();
 

@@ -1,4 +1,3 @@
-#include <iostream>
 #include "../inc/ptree/PTREE.hpp"
 
 #undef __PTREE_MAKE_TESTS // TESTING
@@ -6,9 +5,6 @@
 #if defined(__PTREE_MAKE_TESTS)
 # 	include "../tests/tests.hpp"
 #endif
-
-#define __PTREE_BYTES_TO_GB(_bytes)  		(_bytes / (1024.0 * 1024.0 * 1024.0))
-#define __PTREE_BYTES_TO_MB(_bytes)  		(_bytes / (1024.0 * 1024.0))
 
 int main()
 {
@@ -27,12 +23,14 @@ int main()
 
 	ptree::PTREE_Flags treeFlags;
 	treeFlags.directOutput = true;
-	treeFlags.showFileType = false;
+	treeFlags.showFileType = true;
 	treeFlags.directOutput = true;
 	treeFlags.showFullPath = false;
 	treeFlags.showFileInfo = true;
-	treeFlags.colorOutput = false;
+	treeFlags.colorOutput = true;
 	treeFlags.showHidden = true;
+	treeFlags.showFileSize = true;
+	treeFlags.showDirSize = true;
 
 	ptree::PTREE tree("main", treeFlags);
 
