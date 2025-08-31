@@ -41,10 +41,10 @@ namespace ptree
 		}
 
 		// Result from `requiredMode`
-		if (requiredMode == 0) return { _size, "kib" }; // KiB
-		else if (requiredMode == 1) return { __PTREE_BYTES_TO_MB(_size), "mib"}; // MiB
-		else if (requiredMode == 2) return { __PTREE_BYTES_TO_GB(_size), "gib" }; // GiB
-		else if (requiredMode == 3) return { __PTREE_BYTES_TO_TB(_size), "tib" }; // TiB
+		if (requiredMode == 0) return { _size, "KiB" }; // KiB
+		else if (requiredMode == 1) return { __PTREE_BYTES_TO_MB(_size), "MiB"}; // MiB
+		else if (requiredMode == 2) return { __PTREE_BYTES_TO_GB(_size), "GiB" }; // GiB
+		else if (requiredMode == 3) return { __PTREE_BYTES_TO_TB(_size), "TiB" }; // TiB
 
 		return { 0, "" };
 	}
@@ -415,15 +415,10 @@ namespace ptree
                	: 0;
 
 			try
-			{
-				topBorder = tl + repeat(h, sideLen) + infoTitle
-                	+ repeat(h, boxWidth - sideLen - infoTitle.size()) + tr + "\n";
-            }
+			{ topBorder = tl + repeat(h, sideLen) + infoTitle + repeat(h, boxWidth - sideLen - infoTitle.size()) + tr + "\n"; }
 
             catch (const std::length_error &lenErr)
-            {
-				topBorder = tl + h + h + tr + "\n";
-            }
+            { topBorder = tl + h + h + tr + "\n"; }
 
 			std::cout << topBorder;
 
