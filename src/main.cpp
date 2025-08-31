@@ -1,4 +1,7 @@
-#include <iostream>
+#if defined(__PTREE_MAKE_TESTS)
+// 	DEBUGGING
+# 	include <iostream>
+#endif
 
 #include "../inc/ptree/PTREE.hpp"
 
