@@ -90,7 +90,7 @@ namespace ptree
 			if (dirOK)
 			{
 				// rgb(50, 100, 180)
-				// rgb(0, 40, 180)
+				// rgb(20, 70, 180)
 				std::string rgbColor = ptree::color::rgbGet(50, 100, 180);
 				std::string before = str.substr(0, dirIndicatorPos);
         		std::string after = str.substr(dirIndicatorPos + dirIndicator.size());
@@ -99,10 +99,10 @@ namespace ptree
         		after = after.substr(0, after.find("["));
 
 				if (!this->flags.showFileType)
-					total += before + rgbColor + after + ptree::color::rgbGet(0, 40, 180) + dirSizeInfo + ptree::color::getReset() + "\n";
+					total += before + rgbColor + after + ptree::color::rgbGet(20, 70, 180) + dirSizeInfo + ptree::color::getReset() + "\n";
 
 				else
-					total += before + rgbColor + "[DIR] " + after + ptree::color::rgbGet(0, 40, 180) + dirSizeInfo + ptree::color::getReset() + "\n";
+					total += before + rgbColor + "[DIR] " + after + ptree::color::rgbGet(20, 70, 180) + dirSizeInfo + ptree::color::getReset() + "\n";
 			}
 
 			else if (fileOK)
