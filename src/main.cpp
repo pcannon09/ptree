@@ -44,7 +44,6 @@ int main(int _argc, char **_argv)
 	ptree::PTREE_Flags treeFlags;
 	treeFlags.directOutput = true;
 	treeFlags.showFileType = true;
-	treeFlags.directOutput = true;
 	treeFlags.showFullPath = false;
 	treeFlags.showFileInfo = true;
 	treeFlags.colorOutput = true;
