@@ -45,7 +45,7 @@ set(DEV_COMPILE_FLAGS
     -Wunused
     -Wall
     -Wno-range-loop-analysis
-    -DASIN_DEV=true
+    -DPTREE_DEV=true
 )
 
 set(DEV_LINK_FLAGS
@@ -57,7 +57,7 @@ set(DEV_LINK_FLAGS
 set(PROD_COMPILE_FLAGS
     -O3
     -DNDEBUG
-    -DASIN_DEV=false
+    -DPTREE_DEV=false
 )
 
 set(PROD_LINK_FLAGS
@@ -94,7 +94,7 @@ set(VENDOR_DIR "${CMAKE_SOURCE_DIR}/vendor")
 # Source Files
 
 set(HEADERS
-    ${INC_DIR}/ASITpredefines.hpp
+    ${INC_DIR}/PTREEpredefines.hpp
 
     ${INC_DIR}/PTREEColor.hpp
     ${INC_DIR}/PTREE.hpp
