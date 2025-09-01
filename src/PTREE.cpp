@@ -94,9 +94,17 @@ namespace ptree
 				std::string rgbColor = ptree::color::rgbGet(50, 100, 180);
 				std::string before = str.substr(0, dirIndicatorPos);
         		std::string after = str.substr(dirIndicatorPos + dirIndicator.size());
-				std::string dirSizeInfo = after.substr(after.find("["), after.find("]"));
 
-        		after = after.substr(0, after.find("["));
+				size_t afterSubStrStart = after.find("[");
+				size_t afterSubStrEnd = after.find("]");
+
+				std::string dirSizeInfo;
+
+				if (afterSubStrStart != std::string::npos && afterSubStrEnd != std::string::npos)
+				{
+					dirSizeInfo = after.substr(afterSubStrStart, afterSubStrEnd);
+        			after = after.substr(0, afterSubStrStart);
+				}
 
 				if (!this->flags.showFileType)
 					total += before + rgbColor + after + ptree::color::rgbGet(20, 70, 180) + dirSizeInfo + ptree::color::getReset() + "\n";
@@ -112,9 +120,17 @@ namespace ptree
 				std::string rgbColor = ptree::color::rgbGet(70, 185, 0);
 				std::string before = str.substr(0, fileIndicatorPos);
         		std::string after = str.substr(fileIndicatorPos + fileIndicator.size());
-				std::string fileSizeInfo = after.substr(after.find("["), after.find("]"));
 
-        		after = after.substr(0, after.find("["));
+				size_t afterSubStrStart = after.find("[");
+				size_t afterSubStrEnd = after.find("]");
+
+				std::string fileSizeInfo;
+
+				if (afterSubStrStart != std::string::npos && afterSubStrEnd != std::string::npos)
+				{
+					fileSizeInfo = after.substr(afterSubStrStart, afterSubStrEnd);
+        			after = after.substr(0, afterSubStrStart);
+				}
 
 				if (!this->flags.showFileType)
 					total += ptree::color::getBold() + before + rgbColor + after + ptree::color::rgbGet(10, 125, 0) + fileSizeInfo + ptree::color::getReset() + "\n";
@@ -140,7 +156,7 @@ namespace ptree
     	{
         	for (const auto &entry : fs::directory_iterator(_dir))
         	{
-            	const auto &path = entry.path();
+            	const fs::path &path = entry.path();
 
             	if (path.filename().string().front() == '.' && !this->flags.showHidden)
                 	continue;
@@ -179,6 +195,7 @@ namespace ptree
 		return outInfo;
 	}
 
+	// NOTE: MAIN SCAN
 	// 								name 		   deepness  	  total-str
 	std::pair<std::vector<std::pair<std::string, unsigned int>>, std::string> PTREE::scan(const std::string &_path)
 	{
@@ -207,71 +224,65 @@ namespace ptree
     	for (size_t i = 0 ; i < entries.size() ; i++)
     	{
         	const fs::directory_entry &entry = entries[i];
-
         	const bool isLast = (i == entries.size() - 1);
 
 			unsigned int depth = 0;
 
         	try
         	{
-            	fs::path relative = fs::relative(entry.path(), root);
+            	fs::path path = entry.path();
 
-            	depth = std::distance(relative.begin(), relative.end());
+            	depth = std::distance(path.begin(), path.end());
 
             	if (lastFlags.size() < depth)
-                	lastFlags.resize(depth, false);
+                	lastFlags.resize(depth + 1, false);
 
             	lastFlags[depth - 1] = isLast;
 
 				// Check if hidden
 				// If the `if` statement returns `true`; continue as hidden path
-				if (entry.path().filename().string().front() == '.' && !this->flags.showHidden)
+				if (!this->flags.showHidden && entry.path().filename().string().front() == '.')
 					continue;
 
 				finalEntry = (this->flags.showFullPath ? entry.path().string() : entry.path().filename().string());
 
-				std::string resultInput = (entry.is_directory() ? "[DIR]" : "[FILE]") + finalEntry;
+				std::ostringstream resultInput;
+				resultInput << (entry.is_directory() ? "[DIR]" : "[FILE]") << (!this->flags.colorOutput ? " " + finalEntry : "" + finalEntry);
 				
 				// END OF `resultInput`
 				if (this->flags.showFileSize)
 				{
-					resultInput += " "; // So the previous text does not get cluttered
+					// NOTE: Also works for FILES
+					std::pair<float, std::string> convertedSize = this->__convertSize(this->getDirSize(entry.path()));
 
-					if (!fs::is_directory(entry.path()))
-					{
-						auto convertedSize = this->__convertSize(this->__getFileSize(entry.path()));
-
-						resultInput += "[" +  std::to_string(convertedSize.first) + " " + convertedSize.second + "]";
-					}
-
-					else
-					{
-						auto convertedSize = this->__convertSize(this->__getDirSize(entry.path()));
-
-						resultInput += "[" +  std::to_string(convertedSize.first) + " " + convertedSize.second + "]";
-					}
+					resultInput << " [" +  std::to_string(convertedSize.first) << " " << convertedSize.second << "]";
 				}
 
-            	result.emplace_back( resultInput, depth );
-
-				if (this->flags.colorOutput) totalFiles += this->__parseColor(this->directTree(resultInput, depth));
-				else totalFiles += this->directTree(resultInput, depth);
+				std::string parsed = this->directTree(resultInput.str(), depth);
 
 				// If directOutput is set
 				// Output the result from `i` index
             	if (this->flags.directOutput)
             	{
-					if (this->flags.colorOutput) std::cout << this->__parseColor(this->directTree(resultInput, depth));
-					else std::cout << this->directTree(resultInput, depth);
+					if (this->flags.colorOutput) std::cout << this->__parseColor(parsed);
+					else std::cout << parsed;
+            	}
+
+            	else
+            	{
+					if (this->flags.colorOutput) totalFiles += this->__parseColor(parsed);
+					else totalFiles += parsed;
             	}
 
 				this->processedFilesDirs.first.emplace_back(entry.path()); // file
+
+            	result.emplace_back( resultInput.str(), depth );
             	
             	// Parse entire dir
             	if (fs::is_directory(entry.path()))
             	{
-					this->processedFilesDirs.second.emplace_back(entry.path()); // dir
             		this->info.totalDirs++;
+					this->processedFilesDirs.second.emplace_back(entry.path()); // dir
 
                 	std::vector<std::pair<std::string, unsigned int>> subResult = scan(entry.path().string()).first;
 
