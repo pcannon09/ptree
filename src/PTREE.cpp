@@ -28,7 +28,7 @@ namespace ptree
 	// PROTECTED //
 	std::pair<float, std::string> PTREE::__convertSize(const float _size)
 	{
-		unsigned int requiredMode = this->flags.showSizeMode;
+		unsigned int requiredMode = this->flags.sizeMode;
 
 		if (!this->flags.forceSizeMode)
 		{
@@ -138,8 +138,6 @@ namespace ptree
 				else
 					total += ptree::color::getBold() + before + rgbColor + "[FILE] " + after + ptree::color::rgbGet(10, 125, 0) + fileSizeInfo + ptree::color::getReset() + "\n";
 			}
-
-			ptree::color::reset();
 		}
 
 		return total;
@@ -310,7 +308,7 @@ namespace ptree
 
     	std::string prefix;
 
-    	for (unsigned int i = 0 ; i < _depth ; i++)
+    	for (unsigned int i = 1 ; i < _depth ; i++)
     	{
         	if (i == _depth - 1)
         	{
