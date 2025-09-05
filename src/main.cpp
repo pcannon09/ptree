@@ -26,6 +26,12 @@ enum Bool
 
 namespace ptree::priv
 {
+	const std::string &licenseString = R"(
+PTree Copyright (C) 2025  pcannon09
+This program comes with ABSOLUTELY NO WARRANTY; for details type `ptree --help'.
+This is free software, and you are welcome to redistribute it
+under certain conditions; type `ptree --help' for details.)";
+
 	Bool toBool(const std::string &_str)
 	{
 		if (_str[0] == 't' || _str[0] == 'T' || _str[0] == '1') return True;
@@ -205,7 +211,7 @@ int main(int _argc, char **_argv)
 	// HELP:
 	if (mainArgx.getParam("help").exists)
 	{
-		std::cout << mainArgxDocs << "\n";
+		std::cout << mainArgxDocs << "\n" << ptree::priv::licenseString << "\n";
 
 		return 0;
 	}
