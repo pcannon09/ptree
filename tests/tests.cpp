@@ -68,9 +68,9 @@ namespace ptree::tests
 
 		testNum++;
 
-		if (ARGX_VERSION_MAJOR != 1 && ARGX_VERSION_MINOR < 1)
+		if (ARGX_VERSION_MAJOR != 1 && ARGX_VERSION_MINOR < 2)
 		{
-			__PTREE_DEBUG("Unsupported ARGX version, required is: 1.1.y");
+			__PTREE_DEBUG("Unsupported ARGX version, required is: 1.2.y");
 			__PTREE_DEBUG("[ TEST:  " + std::to_string(testNum) + "/" + std::to_string(testCount) + " ]");
 
 			return 4; // Not a valid lib version
