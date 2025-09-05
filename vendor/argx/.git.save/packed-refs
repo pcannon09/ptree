@@ -1,0 +1,19 @@
+# pack-refs with: peeled fully-peeled sorted 
+713cfb8f01de5b9edeb01c221e5c888964e2564d refs/remotes/origin/1.1.y
+25224161428c0c2f4a369cd27cfa34e641979bd8 refs/remotes/origin/1.2.0-beta
+77d344cbb321d84394bfb49932d9f0c625831028 refs/remotes/origin/1.2.0-beta1
+b911d342ccfcc5c8f0ed30e42ef75ade127c8cf0 refs/remotes/origin/1.2.y
+b911d342ccfcc5c8f0ed30e42ef75ade127c8cf0 refs/remotes/origin/main
+5c619419786ed0ea45aab4418796e855669087bd refs/remotes/origin/stable
+fff7ebe029b35aee5ae10d499b13e51b59a79bde refs/tags/0.1.0-beta
+712eb8e985c76e30e81abf002db0c315c718c75e refs/tags/1.0.0-build
+0f62d6c79fa3b7051e432abee3f1a3c4c5c51373 refs/tags/1.0.1-build
+961902107d0f97fac5a59fcb225019a9af2f858a refs/tags/1.0.2-1-build
+d27270875712a4ede6d401166e9f2229094db374 refs/tags/1.0.2-build
+384acf7184ce314e1560b0277bb31fe40caf404e refs/tags/1.1.0-build
+c3857c12d02ee63fbd805e311f4383bca2d1c210 refs/tags/1.1.1.-build
+384acf7184ce314e1560b0277bb31fe40caf404e refs/tags/1.2.0-1-beta
+77d344cbb321d84394bfb49932d9f0c625831028 refs/tags/1.2.0-beta1
+5c619419786ed0ea45aab4418796e855669087bd refs/tags/1.2.0-build
+c3857c12d02ee63fbd805e311f4383bca2d1c210 refs/tags/1.2.1-build
+b911d342ccfcc5c8f0ed30e42ef75ade127c8cf0 refs/tags/1.2.2-build
