@@ -56,6 +56,13 @@ namespace argx
 		~Argx();
 
 		/**
+		 * @brief Format to a positive number if number is negative for a correct execution of code
+		 * @param _int Number to convert
+		 * @return int Positive value number
+		 */
+		static int formatWrongArgs(const int &_int);
+
+		/**
 		 * @brief Get argument position with specified `arg`
 		 * @param arg Find argument
 		 * @return int Return position of found `arg` from the options
