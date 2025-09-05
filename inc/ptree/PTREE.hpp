@@ -42,21 +42,20 @@ namespace ptree
 	{
 		bool directOutput = true;
 		bool colorOutput = true;
+		bool forceSizeMode = false;
 
-		bool showFileInfo = true;
 		bool showHidden = false;
 		bool showFileType = false;
 		bool showFullPath = false;
 		bool showFiles = false;
 		bool showFileSize = true;
 		bool showDirSize = showFileSize;
-		bool forceSizeMode = false;
 
 		// 0 = KiB
 		// 1 = MiB
 		// 2 = GiB
 		// 3 = TiB
-		unsigned int showSizeMode = 1;
+		unsigned int sizeMode = 1;
 	} PTREE_Flags;
 
 	typedef struct PTREE_Info
