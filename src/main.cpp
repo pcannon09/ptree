@@ -216,16 +216,6 @@ int main(int _argc, char **_argv)
 		return 0;
 	}
 
-	// TODO:
-	// if (!mainArgx.compareArgs(mainArgx.getOptions(), mainArgx.getMainArgs()))
-	// {
-	// 	int wrongArgPos = mainArgx.getWrongArgs(mainArgx.getMainArgs());
-	//
-	// 	std::cout << "[ ARGX ] Unknown option or sub-option: " << mainArgx.getMainArgs()[wrongArgPos] << "\n";
-	//
-	// 	return 1;
-	// }
-
 	// BOOL
 	if (const std::string &ID = "direct-output" ;
 			mainArgx.getParam(ID).exists)
