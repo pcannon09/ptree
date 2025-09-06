@@ -381,6 +381,7 @@ namespace ptree
 		std::cout << "\n";
 
         // INFO - BOX
+        if (this->flags.showInfo)
         {
 			std::vector<std::string> outputInfoStrs = this->outputInfo();
 

@@ -50,6 +50,7 @@ namespace ptree
 		bool showFiles = false;
 		bool showFileSize = true;
 		bool showDirSize = showFileSize;
+		bool showInfo = true;
 
 		// 0 = KiB
 		// 1 = MiB
