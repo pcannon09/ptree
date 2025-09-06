@@ -1,6 +1,7 @@
 #include <iostream>
 #include <algorithm>
 #include <filesystem>
+#include <vector>
 
 #include "../inc/ptree/PTREE.hpp"
 #include "../vendor/argx/inc/Argx.hpp"
@@ -24,6 +25,16 @@ enum Bool
 	None  = 2,
 };
 
+typedef struct PTREE_OptionInfo
+{
+	std::string id;
+	std::string value;
+
+	bool worked;
+
+	argx::ARGXOptions option;
+} PTREE_OptionInfo;
+
 namespace ptree::priv
 {
 	const std::string &licenseString = R"(
@@ -31,6 +42,8 @@ PTree Copyright (C) 2025  pcannon09
 This program comes with ABSOLUTELY NO WARRANTY; for details type `ptree --help'.
 This is free software, and you are welcome to redistribute it
 under certain conditions; type `ptree --help' for details.)";
+
+	std::vector<PTREE_OptionInfo> optionsWorked;
 
 	Bool toBool(const std::string &_str)
 	{
@@ -40,14 +53,17 @@ under certain conditions; type `ptree --help' for details.)";
 		return None;
 	}
 
-	int toNum(const std::string &_str)
+	std::pair<int, bool> toNumComplex(const std::string &_str)
 	{
 		if (std::all_of(_str.begin(), _str.end(), ::isdigit))
-			return std::stoi(_str);
+			return { std::stoi(_str), true };
 
 		// FAIL
-		return 0;
+		return { 0, false };
 	}
+
+	int toNum(const std::string &_str)
+	{ return ptree::priv::toNumComplex(_str).first; }
 
 	namespace param
 	{
@@ -55,24 +71,41 @@ under certain conditions; type `ptree --help' for details.)";
 		{
 			size_t pos = _mainArgx->getArgIDPos(_id);
 
-			int cInt = ptree::priv::toNum(_mainArgx->getOption(_id).defaultValue);
+			std::pair<int, bool> cInt = { 0, false };
 
 			if (_mainArgx->getMainArgs().size() > pos + 1)
-				cInt = ptree::priv::toNum(_mainArgx->getMainArgs()[pos + 1]);
+				cInt = ptree::priv::toNumComplex(_mainArgx->getMainArgs()[ pos + 1 ]);
 
-			*_value = cInt;
+			else cInt = ptree::priv::toNumComplex(_mainArgx->getOption(_id).defaultValue);
+
+			ptree::priv::optionsWorked.push_back({_id, std::to_string(cInt.first), cInt.second, _mainArgx->getOption(_id)});
+
+			*_value = cInt.first;
 		}
 
 		void setOptionValue(argx::Argx *_mainArgx, const std::string &_id, bool *_value)
 		{
 			size_t pos = _mainArgx->getArgIDPos(_id);
 
-			Bool cBool = ptree::priv::toBool(_mainArgx->getOption(_id).defaultValue);
+			Bool cBool = None;
 
 			if (_mainArgx->getMainArgs().size() > pos + 1)
 				cBool = ptree::priv::toBool(_mainArgx->getMainArgs()[ pos + 1 ]);
 
-			*_value = cBool;
+			else cBool = ptree::priv::toBool(_mainArgx->getOption(_id).defaultValue);
+
+			if (cBool != None)
+			{
+				ptree::priv::optionsWorked.push_back({_id, std::to_string(cBool), true, _mainArgx->getOption(_id)});
+
+				*_value = cBool;
+
+				return;
+			}
+
+			ptree::priv::optionsWorked.push_back({_id, std::to_string(false), false, _mainArgx->getOption(_id)});
+
+			*_value = false;
 		}
 	}
 }
@@ -129,6 +162,7 @@ int main(int _argc, char **_argv)
 		argx::ARGXOptions showFileSizeOption;
 		argx::ARGXOptions forceSizeOption;
 		argx::ARGXOptions sizeModeOption;
+		argx::ARGXOptions showInfoOption;
 
 		directOutputOption.id = "direct-output";
 		directOutputOption.param = "--direct-output";
@@ -166,7 +200,7 @@ int main(int _argc, char **_argv)
 		showHiddenOption.param = "--show-hidden";
 		showHiddenOption.sparam = "-a";
 		showHiddenOption.info = "Show hidden files";
-		showHiddenOption.defaultValue = "false";
+		showHiddenOption.defaultValue = std::to_string(treeFlags.showHidden);
 		showHiddenOption.hasAnySubParams = true;
 		showHiddenOption.hasSubParams = false;
 
@@ -191,8 +225,17 @@ int main(int _argc, char **_argv)
 		sizeModeOption.sparam = "-sm";
 		sizeModeOption.info = "Set size mode: 0 = KiB, 1 = MiB, 2 = GiB, 3 = TiB";
 		sizeModeOption.defaultValue = std::to_string(treeFlags.sizeMode);
+		sizeModeOption.tag = "r03"; // range from 0 to 3
 		sizeModeOption.hasAnySubParams = true;
 		sizeModeOption.hasSubParams = false;
+
+		showInfoOption.id = "show-info";
+		showInfoOption.param = "--info";
+		showInfoOption.sparam = "-i";
+		showInfoOption.info = "Show information from the received files and some other relevant statistics";
+		showInfoOption.defaultValue = std::to_string(treeFlags.showInfo);
+		showInfoOption.hasAnySubParams = true;
+		showInfoOption.hasSubParams = false;
 
 		mainArgx.add(helpOption);
 
@@ -204,6 +247,7 @@ int main(int _argc, char **_argv)
 		mainArgx.add(showFileSizeOption);
 		mainArgx.add(forceSizeOption);
 		mainArgx.add(sizeModeOption);
+		mainArgx.add(showInfoOption);
 	}
 
 	std::string mainArgxDocs = mainArgx.createDocs(argx::ARGXStyle::Professional, "PTREE Help", "Command Line Usage:\n");
@@ -245,6 +289,10 @@ int main(int _argc, char **_argv)
 			mainArgx.getParam(ID).exists)
 		ptree::priv::param::setOptionValue(&mainArgx, ID, &treeFlags.forceSizeMode);
 
+	if (const std::string &ID = "show-info" ;
+			mainArgx.getParam(ID).exists)
+		ptree::priv::param::setOptionValue(&mainArgx, ID, &treeFlags.showInfo);
+
 	// INT
 	if (const std::string &ID = "size-mode" ;
 			mainArgx.getParam(ID).exists)
@@ -259,30 +307,79 @@ int main(int _argc, char **_argv)
 	// Construct `tree` variable after flags
 	// The flags use `treeFlags` variable and must be constructed after it to be used
 	ptree::PTREE tree("main", treeFlags);
-	tree.setDir(".");
 
-	bool setDefaultDir = false;
+	bool isDefaultDirFound = false;
+
+	std::string foundDir = ".";
 
 	// If argument not registered, check if the dir exists and set it if so
 	if (!mainArgx.compareArgs(mainArgx.getOptions(), mainArgx.getMainArgs()))
 	{
-		size_t toFind = mainArgx.getMainArgs().size() - 1;
+		for (size_t i = 1 ; i < mainArgx.getMainArgs().size() ; ++i)
+		{
+			const std::string p = mainArgx.getMainArgs()[i];
 
-		if (fs::exists(mainArgx.getMainArgs()[toFind]))
-			tree.setDir(mainArgx.getMainArgs()[toFind]);
+			if (fs::exists(p))
+			{
+				if (isDefaultDirFound) continue;
 
-		else setDefaultDir = true;
+				std::cout << p << "\n";
+
+				isDefaultDirFound = true;
+				foundDir = p;
+
+				continue;
+			}
+
+			// Arg not found
+			else
+			{
+				if (!fs::exists(p)) continue;
+
+				bool checkErrors = true;
+
+				// Check for wrong **SUB-params**
+				for (const auto &x : ptree::priv::optionsWorked)
+				{
+					if (x.option.tag == "r03")
+					{
+						int intVal = ptree::priv::toNum(x.value);
+
+						if (!(intVal >= 0 && intVal <= 3))
+						{
+							std::cerr << "[ PTREE ] Not a valid range for " << x.id << ". Make sure to have a value between 0 and 3\n";
+
+							return 2;
+						}
+
+						checkErrors = false;
+					}
+
+					if (!x.worked)
+					{
+						int wrongArgPos = mainArgx.getWrongArgs(mainArgx.getMainArgs());
+
+						std::cerr << "[ PTREE ] Unknown sub-option " << mainArgx.getMainArgs()[argx::Argx::formatWrongArgs(wrongArgPos)] << "\n";
+
+						return 1;
+					}
+				}
+
+				// As sub-options were checked, now check for the **NON-sub** params
+
+				if (!mainArgx.compareArgs(mainArgx.getOptions(), mainArgx.getMainArgs()) && checkErrors)
+				{
+					int wrongArgPos = mainArgx.getWrongArgs(mainArgx.getMainArgs());
+
+					std::cerr << "[ PTREE ] Unknown option " << mainArgx.getMainArgs()[argx::Argx::formatWrongArgs(wrongArgPos)] << "\n";
+				}
+
+				return 1;
+			}
+		}
 	}
 
-	// Argument not registered, failed to set the dir
-	if (setDefaultDir)
-	{
-		int wrongArgPos = mainArgx.getWrongArgs(mainArgx.getMainArgs());
-		
-		std::cerr << "[ PTREE ] Unknown option " << mainArgx.getMainArgs()[argx::Argx::formatWrongArgs(wrongArgPos)] << "\n";
-
-		return 1;
-	}
+	tree.setDir(foundDir);
 
 	return tree.tree();
 }
