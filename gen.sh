@@ -6,6 +6,8 @@
 
 source ./utils/inc/sh/colors.sh
 
+PYTHON_CMD="python"
+
 DIR_GEN=(
 		".private"
 		".private/dev"
@@ -46,6 +48,14 @@ if [ "$1" == "ungen" ]; then
 
 elif [ "$1" == "doxygen" ]; then
 	doxygen Doxyfile
+
+elif [ "$1" == "patch" ]; then
+	cd ./vendor
+
+	python3 patches.py argx/inc/Argx.hpp 2025-08-09 true
+
+	cd -
+	exit
 fi
 
 for dir in "${DIR_GEN[@]}"; do
