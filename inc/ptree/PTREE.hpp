@@ -8,6 +8,7 @@
 #include <vector>
 #include <utility>
 #include <cinttypes>
+#include <regex>
 
 namespace ptree
 {
@@ -57,6 +58,9 @@ namespace ptree
 		// 2 = GiB
 		// 3 = TiB
 		unsigned int sizeMode = 1;
+
+		std::vector<std::regex> exclusionRegPattern;
+		std::string path;
 	} PTREE_Flags;
 
 	typedef struct PTREE_Info
