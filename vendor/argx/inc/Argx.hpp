@@ -16,7 +16,14 @@ namespace argx
 {
 	class Argx
 	{
-	private:
+// PATCH (2025-08-09):
+// * COMMENT:
+// * Set everything to public for custom implementation for: PTREE
+// * NOTE:
+// * If `private`, code may not compile
+// * CHANGE:
+// private: @TO@ public:
+	public:
 		std::string id;
 
 		static std::vector<ARGXOptions> options;
