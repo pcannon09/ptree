@@ -35,6 +35,12 @@ typedef struct PTREE_OptionInfo
 	argx::ARGXOptions option;
 } PTREE_OptionInfo;
 
+typedef struct PTREE_ParamCheck
+{
+	int code;
+	std::string foundDir;
+} PTREE_ParamCheck;
+
 namespace ptree::priv
 {
 	const std::string &licenseString = R"(
@@ -74,7 +80,9 @@ under certain conditions; type `ptree --help' for details.)";
 			std::pair<int, bool> cInt = { 0, false };
 
 			if (_mainArgx->getMainArgs().size() > pos + 1)
+			{
 				cInt = ptree::priv::toNumComplex(_mainArgx->getMainArgs()[ pos + 1 ]);
+			}
 
 			else cInt = ptree::priv::toNumComplex(_mainArgx->getOption(_id).defaultValue);
 
@@ -89,10 +97,21 @@ under certain conditions; type `ptree --help' for details.)";
 
 			Bool cBool = None;
 
+			std::cout << _id << "\n";
+
 			if (_mainArgx->getMainArgs().size() > pos + 1)
+			{
 				cBool = ptree::priv::toBool(_mainArgx->getMainArgs()[ pos + 1 ]);
 
-			else cBool = ptree::priv::toBool(_mainArgx->getOption(_id).defaultValue);
+				// Switch to default value if error
+				if (cBool == None)
+					cBool = ptree::priv::toBool( _mainArgx->getOption(_id).defaultValue );
+			}
+
+			else
+				cBool = ptree::priv::toBool( _mainArgx->getOption(_id).defaultValue );
+
+			std::cout << cBool << "\n";
 
 			if (cBool != None)
 			{
@@ -103,11 +122,145 @@ under certain conditions; type `ptree --help' for details.)";
 				return;
 			}
 
-			ptree::priv::optionsWorked.push_back({_id, std::to_string(false), false, _mainArgx->getOption(_id)});
+			ptree::priv::optionsWorked.push_back({_id, std::to_string(ptree::priv::toBool(_mainArgx->getOption(_id).defaultValue)), true, _mainArgx->getOption(_id)});
 
 			*_value = false;
 		}
 	}
+
+	namespace impl
+	{
+		class Argx : public argx::Argx
+		{
+		public:
+			std::string id;
+
+			Argx(const std::string &id, int argc, char *argv[])
+				: id(id)
+			{
+        		this->mainArgs = new std::vector<std::string>(argv, argv + argc);
+        		this->mainArgc = argc;
+
+        		if (!this->mainArgs)
+        			std::cerr << "`Argx::mainArgs` is not valid for ID of " + id + " variable is NULL";
+			}
+
+			virtual std::pair<int, std::pair<bool, argx::ARGXOptions>> getWrongArgsNormal(const std::string &argv)
+			{
+				const std::string paramID = this->paramToID(argv);
+
+				for (int i = 1 ; i < this->getOptions().size() ; ++i)
+				{
+					const auto x = this->getOptions()[i];
+
+					if (this->getOption(paramID).id != x.id || paramID.empty())
+					{
+						if (this->getOptions().size() > i + 1 &&
+								(fs::exists(this->getOptions()[i + 1].param) || fs::exists(this->getOptions()[i + 1].sparam)))
+							continue;
+
+						return { i, { true, this->getOption(paramID) }};
+					}
+				}
+
+				return { 0, { false, this->getOption(paramID) }};
+			}
+		};
+	}
+}
+
+namespace impl = ptree::priv::impl;
+
+PTREE_ParamCheck paramCheck(impl::Argx mainArgx)
+{
+	bool isDefaultDirFound = false;
+	bool checkErrors = true;
+
+	PTREE_ParamCheck ret;
+	ret.code = 0;
+	ret.foundDir = ".";
+
+	// If argument not registered, check if the dir exists and set it if so
+	if (!mainArgx.compareArgs(mainArgx.getOptions(), mainArgx.getMainArgs()))
+	{
+		std::vector<std::string> workedIDs;
+
+		for (const auto &x : mainArgx.getOptions())
+		{
+			workedIDs.emplace_back(x.id);
+		}
+
+		for (size_t i = 1 ; i < mainArgx.getMainArgs().size() ; ++i)
+		{
+			const std::string p = mainArgx.getMainArgs()[i];
+
+			if (fs::exists(p) && !isDefaultDirFound)
+			{
+				isDefaultDirFound = true;
+				ret.foundDir = p;
+
+				continue;
+			}
+
+			// Arg not found
+			else
+			{
+				for (size_t i = 0 ; i < mainArgx.getOptions().size() ; ++i)
+				{
+					const auto x = mainArgx.getOptions()[i];
+
+					if (x.tag == "r03")
+					{
+						int intVal = 0;
+
+						if (mainArgx.getMainArgs().size() > i) intVal = ptree::priv::toNum(mainArgx.getMainArgs()[i]);
+						else intVal = ptree::priv::toNum(mainArgx.getOptions()[i].defaultValue);
+
+						if (!(intVal >= 0 && intVal <= 3))
+						{
+							std::cerr << "[ PTREE ] Not a valid range for " << x.id << ". Make sure to have a value between 0 and 3\n";
+
+							ret.code = 1;
+
+							return ret;
+						}
+
+						checkErrors = false;
+					}
+
+					else
+					{
+						const auto wrongArgPos = mainArgx.getWrongArgsNormal(p);
+
+						if (fs::exists(mainArgx.getMainArgs()[argx::Argx::formatWrongArgs(wrongArgPos.first)]) || 
+								wrongArgPos.second.first) continue;
+
+						std::cout << wrongArgPos.first << "\n";
+
+						if (wrongArgPos.first <= 1 && (x.hasAnySubParams || x.hasSubParams))
+						{
+							if (mainArgx.getMainArgs().size() >= wrongArgPos.first + 1)
+								std::cerr << "[ PTREE ] Unknown sub-option: " << mainArgx.getMainArgs()[argx::Argx::formatWrongArgs(wrongArgPos.first) + 1] << "\n";
+
+							ret.code = 1;
+
+							return ret;
+						}
+
+						if (mainArgx.paramExists(mainArgx.getMainArgs()[argx::Argx::formatWrongArgs(wrongArgPos.first)])) continue;
+
+						std::cerr << "[ PTREE ] Unknown option: " << mainArgx.getMainArgs()[argx::Argx::formatWrongArgs(wrongArgPos.first)] << "\n";
+
+						ret.code = 1;
+
+						return ret;
+					}
+				}
+			}
+		}
+	}
+
+	return ret;
 }
 
 int main(int _argc, char **_argv)
@@ -139,7 +292,7 @@ int main(int _argc, char **_argv)
 
 	ptree::PTREE_Flags treeFlags;
 
-	argx::Argx mainArgx("main-argx", _argc, _argv);
+	impl::Argx mainArgx("main-argx-impl", _argc, _argv);
 
 	// ARGX: ADD PARAMS
 	{
@@ -163,6 +316,7 @@ int main(int _argc, char **_argv)
 		argx::ARGXOptions forceSizeOption;
 		argx::ARGXOptions sizeModeOption;
 		argx::ARGXOptions showInfoOption;
+ 		argx::ARGXOptions exclusionRegPatternOption;
 
 		directOutputOption.id = "direct-output";
 		directOutputOption.param = "--direct-output";
@@ -197,10 +351,10 @@ int main(int _argc, char **_argv)
 		colorOutputOption.hasSubParams = false;
 
 		showHiddenOption.id = "show-hidden";
-		showHiddenOption.param = "--show-hidden";
+		showHiddenOption.param = "--all";
 		showHiddenOption.sparam = "-a";
 		showHiddenOption.info = "Show hidden files";
-		showHiddenOption.defaultValue = std::to_string(treeFlags.showHidden);
+		showHiddenOption.defaultValue = "true";
 		showHiddenOption.hasAnySubParams = true;
 		showHiddenOption.hasSubParams = false;
 
@@ -237,6 +391,14 @@ int main(int _argc, char **_argv)
 		showInfoOption.hasAnySubParams = true;
 		showInfoOption.hasSubParams = false;
 
+		exclusionRegPatternOption.id = "exclusion-regex";
+		exclusionRegPatternOption.param = "--exclude";
+		exclusionRegPatternOption.sparam = "-e";
+		exclusionRegPatternOption.info = "Exclude directroies and files with regex";
+		exclusionRegPatternOption.defaultValue = "";
+		exclusionRegPatternOption.hasAnySubParams = true;
+		exclusionRegPatternOption.hasSubParams = false;
+
 		mainArgx.add(helpOption);
 
 		mainArgx.add(directOutputOption);
@@ -248,10 +410,12 @@ int main(int _argc, char **_argv)
 		mainArgx.add(forceSizeOption);
 		mainArgx.add(sizeModeOption);
 		mainArgx.add(showInfoOption);
+		mainArgx.add(exclusionRegPatternOption);
 	}
 
 	std::string mainArgxDocs = mainArgx.createDocs(argx::ARGXStyle::Professional, "PTREE Help", "Command Line Usage:\n");
 
+	/// CHECK ALL PARAMS:
 	// HELP:
 	if (mainArgx.getParam("help").exists)
 	{
@@ -308,78 +472,12 @@ int main(int _argc, char **_argv)
 	// The flags use `treeFlags` variable and must be constructed after it to be used
 	ptree::PTREE tree("main", treeFlags);
 
-	bool isDefaultDirFound = false;
+ 	PTREE_ParamCheck foundDir = paramCheck(mainArgx);
 
-	std::string foundDir = ".";
+ 	if (foundDir.code != 0)
+ 		return foundDir.code;
 
-	// If argument not registered, check if the dir exists and set it if so
-	if (!mainArgx.compareArgs(mainArgx.getOptions(), mainArgx.getMainArgs()))
-	{
-		for (size_t i = 1 ; i < mainArgx.getMainArgs().size() ; ++i)
-		{
-			const std::string p = mainArgx.getMainArgs()[i];
-
-			if (fs::exists(p))
-			{
-				if (isDefaultDirFound) continue;
-
-				std::cout << p << "\n";
-
-				isDefaultDirFound = true;
-				foundDir = p;
-
-				continue;
-			}
-
-			// Arg not found
-			else
-			{
-				if (!fs::exists(p)) continue;
-
-				bool checkErrors = true;
-
-				// Check for wrong **SUB-params**
-				for (const auto &x : ptree::priv::optionsWorked)
-				{
-					if (x.option.tag == "r03")
-					{
-						int intVal = ptree::priv::toNum(x.value);
-
-						if (!(intVal >= 0 && intVal <= 3))
-						{
-							std::cerr << "[ PTREE ] Not a valid range for " << x.id << ". Make sure to have a value between 0 and 3\n";
-
-							return 2;
-						}
-
-						checkErrors = false;
-					}
-
-					if (!x.worked)
-					{
-						int wrongArgPos = mainArgx.getWrongArgs(mainArgx.getMainArgs());
-
-						std::cerr << "[ PTREE ] Unknown sub-option " << mainArgx.getMainArgs()[argx::Argx::formatWrongArgs(wrongArgPos)] << "\n";
-
-						return 1;
-					}
-				}
-
-				// As sub-options were checked, now check for the **NON-sub** params
-
-				if (!mainArgx.compareArgs(mainArgx.getOptions(), mainArgx.getMainArgs()) && checkErrors)
-				{
-					int wrongArgPos = mainArgx.getWrongArgs(mainArgx.getMainArgs());
-
-					std::cerr << "[ PTREE ] Unknown option " << mainArgx.getMainArgs()[argx::Argx::formatWrongArgs(wrongArgPos)] << "\n";
-				}
-
-				return 1;
-			}
-		}
-	}
-
-	tree.setDir(foundDir);
+	tree.setDir(foundDir.foundDir);
 
 	return tree.tree();
 }
