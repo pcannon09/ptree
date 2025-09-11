@@ -3,6 +3,7 @@
 #include <vector>
 #include <utility>
 #include <sstream>
+#include <cmath>
 
 #include <iostream>
 
@@ -34,17 +35,17 @@ namespace ptree
 		{
 			// Set required mode
 			// * Needs to be from bigger (Ex: TB) to smaller (Ex: MB)
-			if (__PTREE_BYTES_TO_TB(_size) >= 1.0) requiredMode = 3;
-			else if (__PTREE_BYTES_TO_GB(_size) >= 1.0) requiredMode = 2;
-			else if (__PTREE_BYTES_TO_MB(_size) >= 1.0) requiredMode = 1;
+			if ((int)__PTREE_BYTES_TO_TB(_size) >= 1.0) requiredMode = 3;
+			else if ((int)__PTREE_BYTES_TO_GB(_size) >= 1.0) requiredMode = 2;
+			else if ((int)__PTREE_BYTES_TO_MB(_size) >= 1.0) requiredMode = 1;
 			else requiredMode = 0;
 		}
 
 		// Result from `requiredMode`
 		if (requiredMode == 0) return { _size, "KiB" }; // KiB
-		else if (requiredMode == 1) return { __PTREE_BYTES_TO_MB(_size), "MiB"}; // MiB
-		else if (requiredMode == 2) return { __PTREE_BYTES_TO_GB(_size), "GiB" }; // GiB
-		else if (requiredMode == 3) return { __PTREE_BYTES_TO_TB(_size), "TiB" }; // TiB
+		else if (requiredMode == 1) return { __PTREE_ROUND_FLOAT_N(__PTREE_BYTES_TO_MB(_size), 3), "MiB"}; // MiB
+		else if (requiredMode == 2) return { __PTREE_ROUND_FLOAT_N(__PTREE_BYTES_TO_GB(_size), 3), "GiB" }; // GiB
+		else if (requiredMode == 3) return { __PTREE_ROUND_FLOAT_N(__PTREE_BYTES_TO_TB(_size), 3), "TiB" }; // TiB
 
 		return { 0, "" };
 	}

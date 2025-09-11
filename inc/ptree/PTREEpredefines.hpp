@@ -42,6 +42,11 @@
 #	define __PTREE_MAKE_TESTS
 #endif // PTREE_DEV
 
+// Must include <cmath> for the following macro
+#define __PTREE_ROUND_FLOAT_N(_f, _n) \
+    std::round(_f * std::pow(10.0f, _n)) / std::pow(10.0f, _n)
+
+#define __PTREE_BYTES_TO_KB(_bytes)  		(_bytes / (1024.0))
 #define __PTREE_BYTES_TO_MB(_bytes)  		(_bytes / (1024.0 * 1024.0))
 #define __PTREE_BYTES_TO_GB(_bytes)  		(_bytes / (1024.0 * 1024.0 * 1024.0))
 #define __PTREE_BYTES_TO_TB(_bytes)  		(_bytes / (1024.0 * 1024.0 * 1024.0 * 1024.0))
